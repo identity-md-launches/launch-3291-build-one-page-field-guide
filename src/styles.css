@@ -160,6 +160,11 @@ main,
   word-break: break-all;
 }
 
+.check .copy {
+  display: block;
+  margin-top: var(--space-1);
+}
+
 .tally {
   margin-top: var(--space-2);
   font-size: var(--fs-2);
@@ -330,9 +335,8 @@ main,
 }
 
 .claim {
-  border: 1px dashed var(--accent);
-  border-radius: var(--radius);
-  padding: var(--space-3);
+  border-top: 1px dotted var(--rule);
+  padding-top: var(--space-2);
 }
 
 .stamp {
@@ -382,8 +386,8 @@ main,
 }
 
 @media (max-width: 420px) {
-  .top {
-    padding-right: 96px;
+  .top h1 {
+    max-width: min(13ch, calc(100% - 96px));
   }
   .karl {
     width: 72px;

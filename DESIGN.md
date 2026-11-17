@@ -4,7 +4,7 @@ Taken from the final source: `src/styles.css`, `src/App.tsx`, `src/Karl.tsx`, `i
 
 ## Overview
 
-A one-page field guide for agents and people new to Robinhood Chain. It looks like a field notebook: cream ruled paper, dark ink, and one accent colour (stamp red) used for annotations. It is read on a phone first. Content runs in one column of at most 46rem. Each place gets one card, in a fixed order, and every card has the same parts: what it is, what MVA did, what broke, receipts, and the claims nobody could find on chain. Data lives in `src/data/places.ts` (text and hashes) and `src/data/receipts.json` (block, time and sender read back from the chain by `scripts/verify-receipts.mjs`).
+A one-page field guide for agents and people new to Robinhood Chain. It looks like a field notebook: cream ruled paper, dark ink, and one accent colour (stamp red) used for annotations. It is read on a phone first. Content runs in one column of at most 46rem. Each place gets one card, in a fixed order, and every card has the same parts: what it is, what MVA did, what broke, receipts, and the claims nobody could find on chain. Data lives in `src/data/places.ts` (text and hashes) and `src/data/receipts.json` (block, time, sender and which way MVA's tokens moved in the Transfer logs, read back from the chain by `scripts/verify-receipts.mjs`).
 
 ## Colors
 
@@ -48,7 +48,7 @@ Body line-height 1.55; h1 1.1 with `letter-spacing: -0.02em` and `text-wrap: bal
 - `.top`, `main` and `.foot` share `max-width: var(--measure)` (46rem) and 16px side padding, so every block aligns on one left edge.
 - Order: title and lede, the how-to-check box, the filter pills, the place index, the cards, the footer line.
 - Cards stack in a single-column grid with 24px gaps. Hashes wrap with `word-break: break-all` instead of being cut, so a full 66-character hash is always readable at 320px.
-- Breakpoints: under 420px the header reserves 96px on the right for Karl; from 760px the h1 grows to 40px, card padding grows to 24px and card names to 28px.
+- Breakpoints: under 420px the h1 is capped at `min(13ch, 100% - 96px)` so it clears Karl, while the lede below Karl runs the full column width; from 760px the h1 grows to 40px, card padding grows to 24px and card names to 28px.
 - `scroll-padding-top` keeps a jumped-to card off the top edge.
 
 ## Elevation & Depth
@@ -57,16 +57,16 @@ Flat. No shadows anywhere. Surfaces separate by tone (`--paper-card` on `--paper
 
 ## Shapes
 
-`--radius` 6px for cards, the check box and claim boxes; pills and copy buttons are fully rounded (999px); stamps use 3px and a -2deg tilt (flat inside the check box legend). Borders: solid 1px for cards, dashed 1.5px ink-soft for the check box, dashed 1px accent for claims, dotted 1px between receipts.
+`--radius` 6px for cards and the check box; pills and copy buttons are fully rounded (999px); stamps use 3px and a -2deg tilt (flat inside the check box legend). Borders: solid 1px for cards, dashed 1.5px ink-soft for the check box, dotted 1px `--rule` between receipts and above each claim (claims are not boxed; the stamp is their only marker).
 
 ## Components
 
-- **Check box** (`.check`, `App.tsx`): dashed box with a numbered list of ways to verify the page, a copy button for a ready `curl` command and for the wallet address, and the stamp legend.
+- **Check box** (`.check`, `App.tsx`): dashed box with a numbered list of ways to verify the page, a copy button for a ready `curl` command and for the wallet address (each on its own line under its value, so a wrapped hash never collides with it), and the stamp legend.
 - **Filter pills** (`.pill`, `role="group"`, `aria-pressed`): Everything, Receipts (count), Not found (count). One is pressed at a time; the pressed one is filled with ink. Min height 44px.
 - **Index** (`nav.index`): numbered anchor links to each card.
-- **Card** (`Card` in `App.tsx`, `.card`): `article` labelled by its h2, with number, name, site link, italic one-line description, then "What MVA did", "What broke", "Receipts" and "Not found on chain" sections. In the Receipts view only receipts show; in the Not found view only cards with claims show, with only their claims.
-- **Receipt row** (`ReceiptRow`, `.receipt`): bold label, date and block from `receipts.json`, whether MVA sent it, the full hash as an explorer link (new tab, described by a hidden "Opens in a new tab" note), and a copy button.
-- **Claim row** (`ClaimRow`, `.claim`): red stamp CLAIMED, NOT FOUND, the claim, where it was said and what was searched for.
+- **Card** (`Card` in `App.tsx`, `.card`): `article` labelled by its h2, with number, name, site link, italic one-line description, then "What MVA did", "What broke", "Receipts" and "Not found on chain" sections. In the Receipts view only receipts show; in the Not found view every card stays (so the index always resolves) and shows only its claims; a card with none reads "Nothing here was claimed without a receipt." in the `.empty` style.
+- **Receipt row** (`ReceiptRow`, `.receipt`): bold label, date and block from `receipts.json`, the direction of the money (`direction()` in `App.tsx`: "sent by MVA" when MVA signed it; "paid from MVA's wallet, relayed by 0x81da…2319" when another address signed but a Transfer left MVA's wallet; "sent to MVA by another address" only when a Transfer arrived), the full hash as an explorer link (new tab, described by a hidden "Opens in a new tab" note), and a copy button.
+- **Claim row** (`ClaimRow`, `.claim`): a dotted top rule, no box; red stamp CLAIMED, NOT FOUND, the claim, where it was said and what was searched for.
 - **Copy button** (`CopyButton`, `.copy`): writes to the clipboard (textarea fallback), then reads "Copied" or "Copy failed" for 1.8s in a polite live region. Min height 32px.
 - **Empty state** (`.empty`): "No receipt found on Robinhood Chain." for a card with no receipts.
 - **Karl** (`src/Karl.tsx`, `.karl`): one line-drawn goldfish in the accent colour, top right of the header, tilted -6deg, with an accessible name.

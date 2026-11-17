@@ -5,7 +5,7 @@ import { Karl } from './Karl'
 
 type View = 'all' | 'found' | 'missing'
 
-type Meta = { block: number; time: string; from: string; sentByMva: boolean }
+type Meta = { block: number; time: string; from: string; sentByMva: boolean; mvaTokenOut: boolean; mvaTokenIn: boolean }
 const meta = checked.receipts as Record<string, Meta>
 
 const receiptCount = places.reduce((n, p) => n + p.receipts.length, 0)
@@ -52,6 +52,16 @@ function day(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
 
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
+
+// Direction comes from the chain: who sent the transaction, and which way the Transfer logs moved MVA's tokens.
+export function direction(m: Meta): string {
+  if (m.sentByMva) return ', sent by MVA'
+  if (m.mvaTokenOut) return `, paid from MVA’s wallet, relayed by ${short(m.from)}`
+  if (m.mvaTokenIn) return ', sent to MVA by another address'
+  return `, sent by ${short(m.from)}, touches MVA’s wallet`
+}
+
 function ReceiptRow({ r }: { r: Receipt }) {
   const m = meta[r.tx]
   return (
@@ -61,7 +71,7 @@ function ReceiptRow({ r }: { r: Receipt }) {
         {m ? (
           <>
             <time dateTime={m.time}>{day(m.time)}</time>, block {m.block.toLocaleString('en-US')}
-            {m.sentByMva ? ', sent by MVA' : ', sent to MVA by another address'}
+            {direction(m)}
           </>
         ) : (
           'not re-checked'
@@ -147,6 +157,7 @@ function Card({ p, n, view }: { p: Place; n: number; view: View }) {
           </ul>
         </>
       )}
+      {view === 'missing' && p.claims.length === 0 && <p className="empty">Nothing here was claimed without a receipt.</p>}
     </article>
   )
 }
@@ -159,7 +170,6 @@ const views: { id: View; label: string }[] = [
 
 export function App() {
   const [view, setView] = useState<View>('all')
-  const shown = view === 'missing' ? places.filter((p) => p.claims.length > 0) : places
   return (
     <>
       <span id="new-tab" hidden>
@@ -224,8 +234,8 @@ export function App() {
         </nav>
 
         <div id="places" className="cards">
-          {shown.map((p) => (
-            <Card key={p.id} p={p} n={places.indexOf(p) + 1} view={view} />
+          {places.map((p, i) => (
+            <Card key={p.id} p={p} n={i + 1} view={view} />
           ))}
         </div>
       </main>

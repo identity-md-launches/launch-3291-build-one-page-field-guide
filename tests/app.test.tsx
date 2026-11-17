@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
-import { App } from '../src/App'
+import { App, direction } from '../src/App'
 import { places } from '../src/data/places'
 import checked from '../src/data/receipts.json'
 
@@ -42,7 +42,9 @@ describe('field guide', () => {
     fireEvent.click(notFound)
     expect(notFound.getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryAllByRole('link').filter((a) => a.getAttribute('href')?.includes('/tx/')).length).toBe(0)
-    expect(document.getElementById('hookr')).toBeNull()
+    // every card stays, so the index always resolves; a place with no claims says so
+    expect(document.querySelectorAll('article.card').length).toBe(11)
+    expect(within(document.getElementById('hookr')!).getByText('Nothing here was claimed without a receipt.')).toBeTruthy()
     expect(screen.queryByText('What MVA did')).toBeNull()
     const receipts = screen.getByRole('button', { name: /Receipts/ })
     fireEvent.click(receipts)
@@ -52,12 +54,34 @@ describe('field guide', () => {
     expect(screen.getAllByText('What MVA did').length).toBe(11)
   })
 
+  it('states the direction of MVA’s money from the Transfer logs', () => {
+    const r = checked.receipts as Record<string, Parameters<typeof direction>[0]>
+    // relayed payments out of MVA's wallet (x402 / Errand relayers)
+    for (const h of [
+      '0xe7a84b0f1f28a9f78eea69dd2b476816dece59ec4c531bc71263d95375fefe2b',
+      '0x8f698a16f8cf38a0d5f267bc37d8988d9cdf380f79a31fbcb5f85646e070715f',
+      '0xb218eac35d568a6ab42ab790e42bb52674582ffb8260f531a3350361928c970e',
+      '0xbfda0f0726616a5078c832de2228da9df161f30fe43f42f8aaf4d31d555422ec',
+      '0x910853f7fe1fafdbc82f3417d2f803f012d446b2ae37faefa8414ee954502c20',
+    ])
+      expect(direction(r[h])).toMatch(/^, paid from MVA’s wallet, relayed by 0x/)
+    expect(direction(r['0x87f8951ac510b13a54224d1ee48ca1ab70e28e6956e75922a2eb7f2e9efbe600'])).toBe(', sent to MVA by another address')
+    for (const m of Object.values(r)) if (m.sentByMva) expect(direction(m)).toBe(', sent by MVA')
+    render(<App />)
+    const raeto = document.getElementById('raeto')!
+    expect(within(raeto).getByText(/paid from MVA’s wallet, relayed by 0x81da…2319/)).toBeTruthy()
+    expect(within(raeto).queryByText(/sent to MVA/)).toBeNull()
+  })
+
   it('has an index that jumps to each card', () => {
     render(<App />)
     const nav = screen.getByRole('navigation', { name: 'Places' })
     const hrefs = within(nav).getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(hrefs).toEqual(places.map((p) => `#${p.id}`))
-    for (const h of hrefs) expect(document.querySelector(h!)).not.toBeNull()
+    for (const v of ['Everything', /Receipts/, /Not found/]) {
+      fireEvent.click(screen.getByRole('button', { name: v }))
+      for (const h of hrefs) expect(document.querySelector(h!)).not.toBeNull()
+    }
   })
 
   it('copies a hash and says so', async () => {

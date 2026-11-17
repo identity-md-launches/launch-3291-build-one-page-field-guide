@@ -44,11 +44,12 @@ The public explorer and RPC named on the page are the ones to check against. Rea
 | Check | Command | Result |
 | --- | --- | --- |
 | Typecheck | `npx tsc --noEmit` | exit 0 |
-| Interaction tests | `npx vitest run` | 7 of 7 passed |
+| Interaction tests | `npx vitest run` | 8 of 8 passed |
 | Production build | `npm run build` | passed; `dist/index.html` plus one CSS and one JS file under `dist/assets/` |
-| On-chain receipts | `RPC_URL=<machine endpoint> node scripts/verify-receipts.mjs` | 49 hashes checked, 49 found, 0 problems |
-| Design probe | `node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste` | **did not run**: Chromium installed but would not start; the machine lacks its system libraries (libglib, libnss3, X11 and others) and has no root access |
+| On-chain receipts | `node scripts/verify-receipts.mjs` (public RPC) | 49 hashes checked, 49 found, 0 problems; now also records `mvaTokenOut` / `mvaTokenIn` from the Transfer logs |
+| Design probe | `node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste` (Playwright and Chromium's system libraries unpacked into a temp folder, outside the repo) | 15 of 16 passed. Only casing fails: the brief's own "CLAIMED, NOT FOUND" stamp and token tickers (CREDIT, USDG, ZENI), kept on purpose |
+| Browser interactions | Playwright script over a local HTTP server at 320, 390, 1440 | no horizontal scroll at any width; no console or resource errors; Not found view keeps 11 cards and "04 Hookr" scrolls its card into view; Raeto receipt reads "paid from MVA's wallet, relayed by 0x81da…2319" |
 
-The tests cover: the eleven cards in the brief's order; every receipt link pointing to `robinhoodchain.blockscout.com/tx/<hash>` with a hash that is in `receipts.json`; one stamp per not-found claim (Forever shows its empty state and stamp); the three filter views; the index anchors resolving to cards; the copy button writing the hash and saying "Copied"; the footer line with the date.
+The tests cover: the eleven cards in the brief's order; every receipt link pointing to `robinhoodchain.blockscout.com/tx/<hash>` with a hash that is in `receipts.json`; one stamp per not-found claim (Forever shows its empty state and stamp); the three filter views; the index anchors resolving to cards in every view; the money direction on relayed payments (five receipts relayed out of MVA's wallet, an incoming one, and all MVA-sent ones); the copy button writing the hash and saying "Copied"; the footer line with the date.
 
-Limitations: no browser rendered this page on the build machine, so layout at 320, 390 and 1440 wide, the first screen at 390, rendered contrast, focus visibility, console errors and WebKit behaviour were not observed. See `artifacts/validation.md`.
+Limitations: Chromium only, headless; WebKit/Safari, a screen reader, and a keyboard walk were not run. See `artifacts/validation.md`.
